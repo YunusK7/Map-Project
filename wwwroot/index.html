@@ -1,0 +1,278 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harita Çizim Uygulaması</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        .control-panel {
+            position: absolute; top: 10px; right: 10px; 
+            background: white; padding: 15px; border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000;
+            max-width: 300px;
+        }
+        button { padding: 8px 12px; margin: 2px; border: none; border-radius: 3px; cursor: pointer; }
+        .draw-btn { background: #007bff; color: white; }
+        .save-btn { background: #28a745; color: white; }
+        .cancel-btn { background: #dc3545; color: white; }
+        #drawing-info { background: #f8f9fa; padding: 10px; border-radius: 3px; margin: 10px 0; }
+        #status { margin-top: 10px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="control-panel">
+        <h3>🗺️ Harita Çizim Uygulaması</h3>
+        
+        <div class="draw-controls">
+            <h4>✏️ Çizim Araçları</h4>
+            <button class="draw-btn" onclick="startDrawing('marker')">📍 Nokta</button>
+            <button class="draw-btn" onclick="startDrawing('polyline')">📏 Çizgi</button>
+            <button class="draw-btn" onclick="startDrawing('polygon')">🔷 Alan</button>
+            <button class="cancel-btn" onclick="stopDrawing()">❌ İptal</button>
+        </div>
+        
+        <div id="drawing-info" style="display: none;">
+            <p><strong>Çizim Modu:</strong> <span id="current-draw-mode"></span></p>
+            <input type="text" id="geometry-name" placeholder="Şekil adı" style="width: 100%; margin: 5px 0;">
+            <textarea id="geometry-desc" placeholder="Açıklama" style="width: 100%; height: 40px; margin: 5px 0;"></textarea>
+            <button class="save-btn" onclick="saveDrawing()">💾 Kaydet</button>
+        </div>
+        
+        <div id="status">Harita yükleniyor...</div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    
+    <script>
+        let map;
+        let drawnItems;
+        let drawControl;
+        let currentLayer = null;
+
+        // Haritayı başlat
+        function initMap() {
+            console.log('Harita başlatılıyor...');
+            
+            map = L.map('map').setView([39.9334, 32.8597], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Çizim katmanı
+            drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+
+            updateStatus('✅ Harita hazır! Çizim araçlarını kullanın.');
+            loadSavedGeometries();
+        }
+
+        // Çizim modunu başlat
+        function startDrawing(mode) {
+            stopDrawing();
+            
+            const drawOptions = {
+                position: 'topleft',
+                draw: {
+                    marker: mode === 'marker',
+                    polyline: mode === 'polyline',
+                    polygon: mode === 'polygon',
+                    circle: false,
+                    rectangle: false,
+                    circlemarker: false
+                },
+                edit: {
+                    featureGroup: drawnItems
+                }
+            };
+
+            drawControl = new L.Control.Draw(drawOptions);
+            map.addControl(drawControl);
+
+            // Çizim event'ları
+            map.on(L.Draw.Event.CREATED, function (e) {
+                const layer = e.layer;
+                currentLayer = layer;
+                drawnItems.addLayer(layer);
+                showDrawingInfo(layer);
+            });
+
+            document.getElementById('current-draw-mode').textContent = 
+                mode === 'marker' ? 'Nokta' : 
+                mode === 'polyline' ? 'Çizgi' : 'Alan';
+                
+            document.getElementById('drawing-info').style.display = 'block';
+        }
+
+        // Çizimi durdur
+        function stopDrawing() {
+            if (drawControl) {
+                map.removeControl(drawControl);
+            }
+            document.getElementById('drawing-info').style.display = 'none';
+            currentLayer = null;
+        }
+
+        // Çizim bilgilerini göster
+        function showDrawingInfo(layer) {
+            console.log('Çizim tamamlandı, bilgi formu gösteriliyor...');
+            document.getElementById('geometry-name').value = '';
+            document.getElementById('geometry-desc').value = '';
+            updateStatus('✅ Çizim tamamlandı! Bilgileri girip kaydedin.');
+        }
+
+        // Çizimi kaydet
+        async function saveDrawing() {
+            if (!currentLayer) {
+                alert('Önce bir çizim yapmalısınız!');
+                return;
+            }
+
+            const name = document.getElementById('geometry-name').value.trim();
+            const description = document.getElementById('geometry-desc').value.trim();
+
+            if (!name) {
+                alert('Lütfen bir isim girin!');
+                return;
+            }
+
+            try {
+                // GeoJSON oluştur
+                const geoJson = currentLayer.toGeoJSON();
+                console.log('Oluşturulan GeoJSON:', geoJson);
+
+                // Sadece geometry kısmını al
+                const geometryData = {
+                    type: geoJson.geometry.type,
+                    coordinates: geoJson.geometry.coordinates
+                };
+
+                const requestData = {
+                    name: name,
+                    description: description,
+                    geoJson: JSON.stringify(geometryData)
+                };
+
+                console.log('Gönderilecek veri:', requestData);
+
+                updateStatus('📤 API\'ye kaydediliyor...');
+
+                const response = await fetch('/api/geoentities', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    updateStatus(`✅ Geometri kaydedildi! ID: ${result.id}`);
+                    
+                    currentLayer._geoId = result.id;
+                    currentLayer.bindPopup(`
+                        <b>${result.name}</b><br>
+                        ${result.description || ''}<br>
+                        <small>Tip: ${result.geometryType}</small>
+                    `);
+                    
+                    stopDrawing();
+                } else {
+                    const error = await response.json();
+                    updateStatus('❌ Kayıt hatası: ' + error.error);
+                    console.error('Kayıt hatası detay:', error);
+                }
+            } catch (error) {
+                updateStatus('❌ Hata: ' + error.message);
+                console.error('Kayıt hatası:', error);
+            }
+        }
+
+        // Kayıtlı geometrileri yükle
+        async function loadSavedGeometries() {
+            try {
+                updateStatus('📥 Kayıtlı geometriler yükleniyor...');
+                const response = await fetch('/api/geoentities');
+                
+                if (!response.ok) {
+                    throw new Error('API hatası: ' + response.status);
+                }
+                
+                const geometries = await response.json();
+                console.log('Yüklenen geometriler:', geometries);
+                
+                geometries.forEach(geo => {
+                    try {
+                        addGeoJsonToMap(geo);
+                    } catch (error) {
+                        console.error('Geometri eklenirken hata:', error, geo);
+                    }
+                });
+                
+                updateStatus(`✅ ${geometries.length} geometri yüklendi`);
+            } catch (error) {
+                updateStatus('❌ Geometriler yüklenemedi: ' + error.message);
+                console.error('Geometriler yüklenirken hata:', error);
+            }
+        }
+
+        // GeoJSON'u haritaya ekle
+        function addGeoJsonToMap(geo) {
+            try {
+                console.log('GeoJSON ekleniyor:', geo);
+                
+                // GeoJSON string'ini parse et
+                const geoJsonData = typeof geo.geoJson === 'string' 
+                    ? JSON.parse(geo.geoJson) 
+                    : geo.geoJson;
+
+                console.log('Parsed GeoJSON:', geoJsonData);
+
+                // Leaflet ile haritaya ekle
+                const layer = L.geoJSON(geoJsonData, {
+                    pointToLayer: function(feature, latlng) {
+                        return L.marker(latlng);
+                    },
+                    style: function(feature) {
+                        return {
+                            color: geo.color || '#3388ff',
+                            weight: 4,
+                            opacity: 0.8,
+                            fillOpacity: 0.3
+                        };
+                    }
+                }).addTo(drawnItems);
+                
+                layer._geoId = geo.id;
+                layer.bindPopup(`
+                    <b>${geo.name}</b><br>
+                    ${geo.description || ''}<br>
+                    <small>Tip: ${geo.geometryType}</small>
+                `);
+
+                console.log('GeoJSON başarıyla eklendi');
+                
+            } catch (error) {
+                console.error('GeoJSON ekleme hatası:', error, geo);
+                throw error;
+            }
+        }
+
+        // Durum güncelle
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML = message;
+            console.log('Status:', message);
+        }
+
+        // Sayfa yüklendiğinde haritayı başlat
+        document.addEventListener('DOMContentLoaded', initMap);
+    </script>
+</body>
+</html>
