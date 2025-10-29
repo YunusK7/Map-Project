@@ -196,7 +196,6 @@ Program.cs dosyasında CORS ayarlarını kontrol edin
 YunusK7 - GitHub
 📞 İletişim & Destek
 Repository: https://github.com/YunusK7/Map-Project
-e-posta: kanburyunusemre28@gmail.com 
 
 Sorularınız için: GitHub Issues kısmından soru oluşturabilirsiniz
 
