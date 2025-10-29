@@ -23,7 +23,7 @@ ASP.NET Core, PostgreSQL ve Leaflet.js kullanılarak geliştirilmiş modern hari
 ## 🛠️ Teknolojiler
 
 ### Backend
-- **.NET 8.0** - Web API Framework
+- **.NET 9.0** - Web API Framework
 - **Entity Framework Core 9.0** - ORM
 - **PostgreSQL** - İlişkisel Veritabanı
 - **Npgsql** - PostgreSQL .NET Provider
