@@ -6,7 +6,7 @@ ASP.NET Core ve Leaflet ile harita çizim uygulaması
 
 ASP.NET Core, PostgreSQL ve Leaflet.js kullanılarak geliştirilmiş modern harita çizim uygulaması. Kullanıcılar harita üzerinde nokta, çizgi ve alan çizebilir, bu çizimleri veritabanında saklayabilir ve yönetebilir.
 
-![Harita Uygulaması](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)
+![Harita Uygulaması](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16.2-336791?logo=postgresql)
 ![Leaflet](https://img.shields.io/badge/Leaflet-1.9.4-199900?logo=leaflet)
 
