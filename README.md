@@ -41,7 +41,7 @@ ASP.NET Core, PostgreSQL ve Leaflet.js kullanılarak geliştirilmiş modern hari
 
 ### Ön Gereksinimler
 
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [PostgreSQL 16+](https://www.postgresql.org/download/)
 - [Git](https://git-scm.com/)
 
@@ -88,7 +88,7 @@ appsettings.json dosyasını düzenleyin:
 appsettings.json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=map_project;Username=postgres;Password=şifreniz;Port=5432"
+    "DefaultConnection": "Host=localhost;Database=map_project;Username=postgres;Password=sizin_şifreniz;Port=5432"
   },
   "Logging": {
     "LogLevel": {
